@@ -1,122 +1,140 @@
-# TypeScript Boilerplate for 2022
+## これは何？
 
-[![Build and test status](https://github.com/metachris/typescript-boilerplate/workflows/Lint%20and%20test/badge.svg)](https://github.com/metachris/typescript-boilerplate/actions?query=workflow%3A%22Build+and+test%22)
+TDD をしつつ github copilot を有効活用するにはどのようにコードを書いていくべきなのかを模索する課題集です。
+正解は私にもわからないので議論していきましょう。
+課題をこなしていくにつれ、TDD そのものや copilot への理解が深まるようにしていきます。
 
-TypeScript project boilerplate with modern tooling, for Node.js programs, libraries and browser modules. Get started quickly and right-footed 🚀
+## 事前準備
 
-* [TypeScript 4](https://www.typescriptlang.org/)
-* Optionally [esbuild](https://esbuild.github.io/) to bundle for browsers (and Node.js)
-* Linting with [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint) ([tslint](https://palantir.github.io/tslint/) is deprecated)
-* Testing with [Jest](https://jestjs.io/docs/getting-started) (and [ts-jest](https://www.npmjs.com/package/ts-jest))
-* Publishing to npm
-* Continuous integration ([GitHub Actions](https://docs.github.com/en/actions) / [GitLab CI](https://docs.gitlab.com/ee/ci/))
-* Automatic API documentation with [TypeDoc](https://typedoc.org/guides/doccomments/)
+- github copilot を vscode で使えるようにセットアップ
+- `yarn install`後に`yarn test`でテストが動作するかを確認
 
-See also the introduction blog post: **[Starting a TypeScript Project in 2021](https://www.metachris.com/2021/03/bootstrapping-a-typescript-node.js-project/)**.
+## 課題
 
+- `Subscription`のリストを配列で返す API から必要な情報を抽出する関数を作ります
+- API は開発途中のものを使っています
+  - よきせぬ仕様変更が入る可能性があります
+  - ドキュメントはあまり整理されていない状態で、実際に動く実物以外の情報はないものとします
 
-## Getting Started
+### 課題 1
 
-```bash
-# Clone the repository (you can also click "Use this template")
-git clone https://github.com/metachris/typescript-boilerplate.git your_project_name
-cd your_project_name
+`subscriptionOfferDetails.offerTags`に`sub`を含む、`offerToken`を返す関数を作ってください。
+ただし、`publishedAt`が現在時刻より前(発行済み)かつ、最も新しいオブジェクトに含まれる`subscriptionOfferDetails`以下のもののみを返してください。
+サンプル API を叩くと以下のようなレスポンスが帰ってきます。
 
-# Edit `package.json` and `tsconfig.json` to your liking
-...
-
-# Install dependencies
-yarn install
-
-# Now you can run various yarn commands:
-yarn cli
-yarn lint
-yarn test
-yarn build-all
-yarn ts-node <filename>
-yarn esbuild-browser
-...
+```json
+[
+  {
+    "subscriptionOfferDetails": [
+      {
+        "pricingPhases": {
+          "pricingPhaseList": [
+            {
+              "recurrenceMode": 2,
+              "priceAmountMicros": "0",
+              "billingCycleCount": 1,
+              "billingPeriod": "P2W",
+              "priceCurrencyCode": "JPY",
+              "formattedPrice": "Free"
+            },
+            {
+              "recurrenceMode": 1,
+              "priceAmountMicros": "9700000000",
+              "billingCycleCount": 0,
+              "billingPeriod": "P1Y",
+              "priceCurrencyCode": "JPY",
+              "formattedPrice": "¥9,700"
+            }
+          ]
+        },
+        "offerTags": [],
+        "offerToken": "sample-offer-token-hoge"
+      },
+      {
+        "pricingPhases": {
+          "pricingPhaseList": [
+            {
+              "recurrenceMode": 1,
+              "priceAmountMicros": "9700000000",
+              "billingCycleCount": 0,
+              "billingPeriod": "P1Y",
+              "priceCurrencyCode": "JPY",
+              "formattedPrice": "¥9,700"
+            }
+          ]
+        },
+        "offerTags": [],
+        "offerToken": "sample-offer-token-fuga"
+      },
+      {
+        "pricingPhases": {
+          "pricingPhaseList": [
+            {
+              "recurrenceMode": 1,
+              "priceAmountMicros": "8000000000",
+              "billingCycleCount": 0,
+              "billingPeriod": "P1M",
+              "priceCurrencyCode": "JPY",
+              "formattedPrice": "¥8,000"
+            }
+          ]
+        },
+        "offerTags": ["main"],
+        "offerToken": "sample-offer-token-piyo"
+      }
+    ],
+    "name": "サンプルプラン",
+    "productType": "main",
+    "description": "",
+    "title": "サンプルプラン (サンプルアプリ)",
+    "productId": "sample_subscription_id_1",
+    "publishedAt": "2021-01-01T00:00:00.000Z"
+  }
+]
 ```
 
-* Take a look at all the scripts in [`package.json`](https://github.com/metachris/typescript-boilerplate/blob/master/package.json)
-* For publishing to npm, use `yarn publish` (or `npm publish`)
+### 課題 2
 
-## esbuild
+仕様変更です。絞り込む対象オブジェクトは`publishedAt`が最も新しいオブジェクトではなく、新たに追加された`pricingTags`に`pickup`が含まれるものに限定してください。
+サンプル API を叩くと以下のようなレスポンスが帰ってきます。
 
-[esbuild](https://esbuild.github.io/) is an extremely fast bundler that supports a [large part of the TypeScript syntax](https://esbuild.github.io/content-types/#typescript). This project uses it to bundle for browsers (and Node.js if you want).
-
-```bash
-# Build for browsers
-yarn esbuild-browser:dev
-yarn esbuild-browser:watch
-
-# Build the cli for node
-yarn esbuild-node:dev
-yarn esbuild-node:watch
+```json
+[
+  {
+    "subscriptionOfferDetails": [
+      {
+        "pricingPhases": {
+          "pricingPhaseList": [
+            {
+              "recurrenceMode": 2,
+              "priceAmountMicros": "0",
+              "billingCycleCount": 1,
+              "billingPeriod": "P2W",
+              "priceCurrencyCode": "JPY",
+              "formattedPrice": "Free",
+              "pricingTags": []
+            },
+            {
+              "recurrenceMode": 1,
+              "priceAmountMicros": "9700000000",
+              "billingCycleCount": 0,
+              "billingPeriod": "P1Y",
+              "priceCurrencyCode": "JPY",
+              "formattedPrice": "¥9,700",
+              "pricingTags": ["pickup"]
+            }
+          ]
+        },
+        "offerTags": [],
+        "offerToken": "sample-offer-token-hoge"
+      }
+    ],
+    "name": "サンプルプラン",
+    "productType": "main",
+    "description": "",
+    "title": "サンプルプラン (サンプルアプリ)",
+    "productId": "sample_subscription_id_1",
+    "publishedAt": "2021-01-01T00:00:00.000Z"
+  }
+]
 ```
-
-You can generate a full clean build with `yarn build-all` (which uses both `tsc` and `esbuild`).
-
-* `package.json` includes `scripts` for various esbuild commands: [see here](https://github.com/metachris/typescript-boilerplate/blob/master/package.json#L23)
-* `esbuild` has a `--global-name=xyz` flag, to store the exports from the entry point in a global variable. See also the [esbuild "Global name" docs](https://esbuild.github.io/api/#global-name).
-* Read more about the esbuild setup [here](https://www.metachris.com/2021/04/starting-a-typescript-project-in-2021/#esbuild).
-* esbuild for the browser uses the IIFE (immediately-invoked function expression) format, which executes the bundled code on load (see also https://github.com/evanw/esbuild/issues/29)
-
-
-## Tests with Jest
-
-You can write [Jest tests](https://jestjs.io/docs/getting-started) [like this](https://github.com/metachris/typescript-boilerplate/blob/master/src/main.test.ts):
-
-```typescript
-import { greet } from './main'
-
-test('the data is peanut butter', () => {
-  expect(1).toBe(1)
-});
-
-test('greeting', () => {
-  expect(greet('Foo')).toBe('Hello Foo')
-});
-```
-
-Run the tests with `yarn test`, no separate compile step is necessary.
-
-* See also the [Jest documentation](https://jestjs.io/docs/getting-started).
-* The tests can be automatically run in CI (GitHub Actions, GitLab CI): [`.github/workflows/lint-and-test.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.github/workflows/lint-and-test.yml), [`.gitlab-ci.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.gitlab-ci.yml)
-* Take a look at other modern test runners such as [ava](https://github.com/avajs/ava), [uvu](https://github.com/lukeed/uvu) and [tape](https://github.com/substack/tape)
-
-## Documentation, published with CI
-
-You can auto-generate API documentation from the TypeScript source files using [TypeDoc](https://typedoc.org/guides/doccomments/). The generated documentation can be published to GitHub / GitLab pages through the CI.
-
-Generate the documentation, using `src/main.ts` as entrypoint (configured in package.json):
-
-```bash
-yarn docs
-```
-
-The resulting HTML is saved in `docs/`.
-
-You can publish the documentation through CI:
-* [GitHub pages](https://pages.github.com/): See [`.github/workflows/deploy-gh-pages.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.github/workflows/deploy-gh-pages.yml)
-* [GitLab pages](https://docs.gitlab.com/ee/user/project/pages/): [`.gitlab-ci.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.gitlab-ci.yml)
-
-This is the documentation for this boilerplate project: https://metachris.github.io/typescript-boilerplate/
-
-## References
-
-* **[Blog post: Starting a TypeScript Project in 2021](https://www.metachris.com/2021/03/bootstrapping-a-typescript-node.js-project/)**
-* [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
-* [tsconfig docs](https://www.typescriptlang.org/tsconfig)
-* [esbuild docs](https://esbuild.github.io/)
-* [typescript-eslint docs](https://github.com/typescript-eslint/typescript-eslint/blob/master/docs/getting-started/linting/README.md)
-* [Jest docs](https://jestjs.io/docs/getting-started)
-* [GitHub Actions](https://docs.github.com/en/actions), [GitLab CI](https://docs.gitlab.com/ee/ci/)
-
-
-## Feedback
-
-Reach out with feedback and ideas:
-
-* [twitter.com/metachris](https://twitter.com/metachris)
-* [Create a new issue](https://github.com/metachris/typescript-boilerplate/issues)
